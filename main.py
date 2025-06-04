@@ -1,7 +1,10 @@
 import json
 import os
+import user_stats
 
-senders = {}
+from user_stats import UserStats
+
+user_message_count = {}
 
 def jsonify(file_url):
     """
@@ -10,6 +13,7 @@ def jsonify(file_url):
     :param file_url: The string path of the file URL to fetch the JSON from.
     :return: A JSON representation of the data stored in the file.
     """
+
     raw_data_file = open(file_url)
     raw_data_string = raw_data_file.read()
     raw_data_file.close()
@@ -24,11 +28,13 @@ def extract_message_counts(raw_data_json, users):
     :param raw_data_json: The JSON data about the message history.
     :param users: The users dictionary to store data in
     """
+
     for message in raw_data_json["messages"]:
-        if message["sender_name"] not in users:
-            users[message["sender_name"]] = 1
+        sender_name = message["sender_name"]
+        if sender_name not in users:
+            users[message["sender_name"]] = UserStats(sender_name, 1)
         else:
-            users[message["sender_name"]] = users[message["sender_name"]] + 1
+            users[message["sender_name"]].increase_message_count(1)
 
 
 def fetch_all_data_files(directory):
@@ -39,11 +45,24 @@ def fetch_all_data_files(directory):
     :param directory: The directory to look through.
     :return: A list of file names in the given directory location.
     """
+
     return os.listdir(directory)
+
+
+def display_entries(entries):
+    """
+    Loops through each entry and formats the username nicely with the number of messages the user has sent.
+
+    :param entries: A dictionary list of {username: UserStats, ...}
+    """
+
+    for username in entries:
+        print(username[0], ":", str(username[1].get_messages()), "messages sent.")
 
 
 for data_file in fetch_all_data_files("data/"):
     json_data = jsonify("data/" + data_file)
-    extract_message_counts(json_data, senders)
+    extract_message_counts(json_data, user_message_count)
 
-print(senders)
+sorted_user_message_count = sorted(user_message_count.items(), key=lambda x: x[1].get_messages(), reverse=True)
+display_entries(sorted_user_message_count)

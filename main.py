@@ -1,6 +1,5 @@
 import json
 import os
-import user_stats
 
 from user_stats import UserStats
 
@@ -18,6 +17,18 @@ def jsonify(file_url):
     raw_data_string = raw_data_file.read()
     raw_data_file.close()
     return json.loads(raw_data_string)
+
+
+def decode_username(encoded_username):
+    """
+    Instagram data returns double-encoded unicode strings, and genuine text may be presented as just \\u00xx, and looks
+    even worse when printed to the console where it may just appear as spaces - this will convert it to latin1 and
+    decode back from utf-8 to fix this.
+
+    :param encoded_username: The username encoded with \\u00xx codes that needs converting.
+    :return: A clean string showing what the user would've seen in the Instagram app.
+    """
+    return encoded_username.encode('latin1').decode('utf-8')
 
 
 def extract_message_counts(raw_data_json, users):
@@ -57,7 +68,7 @@ def display_entries(entries):
     """
 
     for username in entries:
-        print(username[0], ":", str(username[1].get_messages()), "messages sent.")
+        print(decode_username(username[0]), ":", str(username[1].get_messages()), "messages sent.")
 
 
 for data_file in fetch_all_data_files("data/"):
